@@ -261,9 +261,6 @@ Error_Handler();
 	if ( HAL_OK != HAL_TIM_IC_Start_DMA(&htim2, TIM_CHANNEL_1, (uint32_t*) &CH1_capture, 1) )
 		Error_Handler();
 
-	if (HAL_OK != HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_2))
-		Error_Handler();
-
 	// assumption check TIM2->ARR =0xffffffff
 	if (0xffffffff != TIM2->ARR)
 		Error_Handler();
@@ -282,14 +279,16 @@ Error_Handler();
 	CH1_captureDone=0;
 
 	while (0 == CH1_captureDone) { ; }
-	TIM3->CCR1 = TIM3->CNT+CH1_diffCapture;
-
 	CH1_diffCapture = CH1_capture- last_CH1_capture;
 	last_CH1_capture = CH1_capture;
+	TIM2->CCR2 = TIM2->CNT+CH1_diffCapture;
 	CH1_captureDone=0;
 
 	fperiod = (float) CH1_diffCapture*ratio;
+	period = (uint32_t) (fperiod);
 
+	if (HAL_OK != HAL_TIM_OC_Start_IT(&htim2, TIM_CHANNEL_2))
+		Error_Handler();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -997,13 +996,13 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 		//currentTime= htim->Instance->CCR1;
 		CH1_captureDone = 1;
 
-//#define CHECK
+#define CHECK
 #ifdef CHECK
 		DIV_counter++;
 		if (DIV_counter >= (DIVIDER)){
-			//	     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_1);  // Toggle
+			//	     HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8);  // Toggle
 			// Set selected pins that were at low level, and reset ones that were high
-			GPIOC->BSRR = ((GPIOC->ODR & DIV_OUT_Pin) << 16) | (~GPIOC->ODR & DIV_OUT_Pin);
+			GPIOA->BSRR = ((GPIOA->ODR & DIV_OUT_Pin) << 16) | (~GPIOA->ODR & DIV_OUT_Pin);
 			DIV_counter=0;
 		}
 #endif
